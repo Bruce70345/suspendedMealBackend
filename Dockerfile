@@ -13,8 +13,8 @@ RUN npm install
 # 複製其餘檔案
 COPY . .
 
-# 開放 1000 埠
-EXPOSE 1000
+# 開放 8080 埠 (雲平台標準)
+EXPOSE 8080
 
 # 啟動應用程式
 CMD ["npm", "start"]

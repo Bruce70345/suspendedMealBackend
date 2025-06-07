@@ -30,9 +30,30 @@ app.use(express.json());
 // 使用環境變數配置 MongoDB 連接
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/freeMeals';
 
+// 根路徑 - 健康檢查
+app.get('/', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        message: 'API is running',
+        time: new Date().toISOString()
+    });
+});
+
 // 添加健康檢查端點
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK' });
+    const dbState = mongoose.connection.readyState;
+    const states = {
+        0: 'disconnected',
+        1: 'connected',
+        2: 'connecting',
+        3: 'disconnecting'
+    };
+
+    res.status(200).json({
+        status: 'OK',
+        db: states[dbState] || 'unknown',
+        time: new Date().toISOString()
+    });
 });
 
 app.get('/api', (req, res) => {
@@ -51,9 +72,17 @@ app.use('/api/sign', signRoutes);
 
 // 啟動伺服器的函數
 const startServer = async () => {
+    // 先啟動伺服器，確保健康檢查能夠響應
+    const PORT = process.env.PORT || 8080;
+    const server = app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Server is running on port ${PORT}`);
+        console.log('🌍 伺服器綁定到 0.0.0.0 (所有網路介面)');
+    });
+
+    // 嘗試連接資料庫，但不會阻止伺服器啟動
     try {
-        // 先連接資料庫
         console.log("🔄 正在連接到 MongoDB...");
+        console.log("連接字串:", MONGODB_URI.includes("mongodb+srv") ? "mongodb+srv://******" : MONGODB_URI);
 
         await mongoose.connect(MONGODB_URI, {
             useNewUrlParser: true,
@@ -64,19 +93,34 @@ const startServer = async () => {
 
         console.log("✅ MONGO CONNECTION OPEN!!!");
         console.log("資料庫連接狀態:", mongoose.connection.readyState);
-
-        // 資料庫連接成功後才啟動伺服器
-        const PORT = process.env.PORT || 1000;
-        app.listen(PORT, '0.0.0.0', () => {
-            console.log(`🚀 Server is running on port ${PORT}`);
-            console.log('🌍 伺服器綁定到 0.0.0.0 (所有網路介面)');
-        });
     } catch (err) {
-        console.log("❌ OH NO MONGO CONNECTION ERROR!!!!");
-        console.log("錯誤詳情:", err);
-        console.log("連接字串:", MONGODB_URI);
-        process.exit(1); // 連接失敗則結束程式
+        console.log("⚠️ MongoDB 連接錯誤，但伺服器仍在運行");
+        console.log("❌ 錯誤詳情:", err.message);
+        // 不退出程序，讓伺服器繼續運行
     }
+
+    // 優雅關閉
+    process.on('SIGTERM', () => {
+        console.log('📴 收到 SIGTERM 信號，正在關閉伺服器...');
+        server.close(() => {
+            console.log('✅ HTTP 伺服器已關閉');
+            mongoose.connection.close(false, () => {
+                console.log('✅ MongoDB 連接已關閉');
+                process.exit(0);
+            });
+        });
+    });
+
+    process.on('SIGINT', () => {
+        console.log('📴 收到 SIGINT 信號，正在關閉伺服器...');
+        server.close(() => {
+            console.log('✅ HTTP 伺服器已關閉');
+            mongoose.connection.close(false, () => {
+                console.log('✅ MongoDB 連接已關閉');
+                process.exit(0);
+            });
+        });
+    });
 };
 
 // 監聽連接事件
@@ -85,7 +129,7 @@ mongoose.connection.on('connected', () => {
 });
 
 mongoose.connection.on('error', (err) => {
-    console.log('❌ Mongoose 連接錯誤:', err);
+    console.log('❌ Mongoose 連接錯誤:', err.message);
 });
 
 mongoose.connection.on('disconnected', () => {
