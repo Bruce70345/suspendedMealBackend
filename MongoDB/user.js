@@ -7,7 +7,7 @@ const FreeMealUser = require('./models/freeMealUserModel');
 const MONGODB_URI = process.env.MONGODB_URI;
 
 // 连接 MongoDB 数据库
-mongoose.connect(MONGODB_URI)
+await mongoose.connect(MONGODB_URI)
     .then(() => {
         console.log("MONGO CONNECTION OPEN!!!");
         console.log("使用連接字串:", MONGODB_URI.includes("mongodb+srv") ? "mongodb+srv://******" : MONGODB_URI);

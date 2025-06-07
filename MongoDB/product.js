@@ -5,7 +5,7 @@ const FreeMealProduct = require('./models/freeMealProductModel'); // 导入Mongo
 // 使用環境變數中的 MongoDB 連接字串
 const MONGODB_URI = process.env.MONGODB_URI;
 
-mongoose.connect(MONGODB_URI)
+await mongoose.connect(MONGODB_URI)
     .then(() => {
         console.log("MONGO CONNECTION OPEN!!!");
         console.log("使用連接字串:", MONGODB_URI.includes("mongodb+srv") ? "mongodb+srv://******" : MONGODB_URI);
