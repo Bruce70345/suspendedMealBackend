@@ -13,8 +13,8 @@ RUN npm install
 # 複製其餘檔案
 COPY . .
 
-# 開放 5000 埠
-EXPOSE 5000
+# 開放 1000 埠
+EXPOSE 1000
 
 # 啟動應用程式
 CMD ["npm", "start"]

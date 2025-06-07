@@ -7,43 +7,78 @@ const { v4: uuid } = require('uuid');
 
 // POST /api/users - 新增用户
 const addUuidMiddleware = async (req, res, next) => {
+    console.log('📝 開始處理新用戶註冊:', req.body);
     const generatedId = uuid();
 
     try {
-        const lnglat = await geocodeAddress(req.body.address);
+        let lnglat = null;
+
+        // 如果有地址，嘗試獲取座標
+        if (req.body.address) {
+            try {
+                lnglat = await geocodeAddress(req.body.address);
+                console.log('📍 成功獲取座標:', lnglat);
+            } catch (geocodeError) {
+                console.log('⚠️ 地址解析失敗，但繼續創建用戶:', geocodeError);
+                // 不阻止用戶創建，只是沒有座標資訊
+            }
+        }
 
         req.body = {
             ...req.body,
             userId: generatedId,
-            lnglat: lnglat
+            ...(lnglat && { lnglat: lnglat }) // 只有在有座標時才添加
         };
 
+        console.log('✅ 用戶資料準備完成:', req.body);
         next();
     } catch (error) {
-        console.error('Error:', error);
-        next(error); // Pass error to the error handling middleware
+        console.error('❌ addUuidMiddleware 錯誤:', error);
+        // 即使出錯也繼續，確保用戶可以註冊
+        req.body = {
+            ...req.body,
+            userId: generatedId
+        };
+        next();
     }
 };
 
 function geocodeAddress(address) {
     return new Promise((resolve, reject) => {
+        // 檢查是否有 Google Maps API 金鑰
+        if (!process.env.GOOGLE_MAPS_API) {
+            console.log('⚠️ 沒有 Google Maps API 金鑰');
+            reject('No Google Maps API key');
+            return;
+        }
+
         const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${process.env.GOOGLE_MAPS_API}`;
+        console.log('🌍 請求 Google Maps API:', address);
 
         // 請求 Google Maps Geocoding API
-        request(url, { json: true }, (err, response, body) => {
+        request(url, { json: true, timeout: 5000 }, (err, response, body) => {
             if (err) {
-                reject('Internal Server Error');
+                console.log('❌ Google Maps API 請求錯誤:', err.message);
+                reject('Google Maps API request failed');
                 return;
             }
 
-            if (body.status === 'OK') {
+            if (!body) {
+                console.log('❌ Google Maps API 沒有回應');
+                reject('No response from Google Maps API');
+                return;
+            }
+
+            if (body.status === 'OK' && body.results && body.results.length > 0) {
                 const location = body.results[0].geometry.location;
+                console.log('✅ 成功獲取座標:', location);
                 resolve({
                     lat: location.lat,
                     lng: location.lng
                 });
             } else {
-                reject('Address not found');
+                console.log('❌ Google Maps API 狀態:', body.status, body.error_message || '');
+                reject(`Address geocoding failed: ${body.status}`);
             }
         });
     });
