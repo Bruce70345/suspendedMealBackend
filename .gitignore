@@ -1,0 +1,7 @@
+# 忽略所有 .env 檔案
+.env
+
+# 忽略所有 node_modules 資料夾
+node_modules/
+
+
