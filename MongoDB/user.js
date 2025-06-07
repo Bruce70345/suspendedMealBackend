@@ -1,12 +1,16 @@
+require('dotenv').config();
 const { v4: uuid } = require('uuid');
 const mongoose = require('mongoose');
 const FreeMealUser = require('./models/freeMealUserModel');
 
+// 使用環境變數中的 MongoDB 連接字串
+const MONGODB_URI = process.env.MONGODB_URI;
 
 // 连接 MongoDB 数据库
-mongoose.connect('mongodb://localhost:27017/freeMeals')
+mongoose.connect(MONGODB_URI)
     .then(() => {
         console.log("MONGO CONNECTION OPEN!!!");
+        console.log("使用連接字串:", MONGODB_URI.includes("mongodb+srv") ? "mongodb+srv://******" : MONGODB_URI);
 
         // 定义要插入的多个用户对象
         const newUsers = [
@@ -54,7 +58,7 @@ mongoose.connect('mongodb://localhost:27017/freeMeals')
         console.log(err)
     });
 
-    // const users = [
+// const users = [
 //     {
 //         userId: '9b87fc0c-eb60-49cb-b20f-fe3b0d5854a3',
 //         name: 'guest',

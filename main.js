@@ -28,7 +28,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // 使用環境變數配置 MongoDB 連接
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/freeMeals';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 // 根路徑 - 健康檢查
 app.get('/', (req, res) => {
