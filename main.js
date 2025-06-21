@@ -18,9 +18,12 @@ const corsOptions = {
     origin: [
         'http://localhost:3000', // 本地開發
         'https://suspended-mael-frontend.vercel.app', // 替換為您的 Vercel 域名
+        'https://www.suspendedmeal.brucechen70345.com',
+        'https://suspendedmeal.brucechen70345.com',
         'https://suspendedmealbackend.zeabur.app', // 後端域名
         /\.vercel\.app$/, // 允許所有 Vercel 子域名
-        /\.zeabur\.app$/ // 允許所有 Zeabur 子域名
+        /\.zeabur\.app$/, // 允許所有 Zeabur 子域名
+        /\.brucechen70345\.com$/ // 允許所有 Bruce Chen 子域名
     ],
     credentials: true
 };
